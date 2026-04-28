@@ -2,8 +2,10 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { IWhatsAppEngine } from './interfaces/whatsapp-engine.interface';
 import { WhatsAppWebJsAdapter } from './adapters/whatsapp-web-js.adapter';
+import { BaileysAdapter } from './adapters/baileys.adapter';
 import { PluginLoaderService, PluginType, IEnginePlugin, PluginManifest } from '../core/plugins';
 import { WhatsAppWebJsPlugin } from '../plugins/engines/whatsapp-web-js';
+import { BaileysPlugin } from '../plugins/engines/baileys';
 import { createLogger } from '../common/services/logger.service';
 
 export interface EngineCreateOptions {
@@ -30,19 +32,36 @@ export class EngineFactory implements OnModuleInit {
   }
 
   private async registerBuiltInEngines(): Promise<void> {
-    // Register WhatsApp-web.js as built-in plugin
-    const wwjsManifest: PluginManifest = {
-      id: 'whatsapp-web.js',
-      name: 'WhatsApp Web.js Engine',
-      version: '1.0.0',
-      type: PluginType.ENGINE,
-      description: 'Official WhatsApp-web.js engine adapter',
-      main: 'index.ts',
-      provides: ['whatsapp-engine'],
-    };
+    const builtInEngines: Array<{ manifest: PluginManifest; plugin: IEnginePlugin }> = [
+      {
+        manifest: {
+          id: 'whatsapp-web.js',
+          name: 'WhatsApp Web.js Engine',
+          version: '1.0.0',
+          type: PluginType.ENGINE,
+          description: 'Official WhatsApp-web.js engine adapter',
+          main: 'index.ts',
+          provides: ['whatsapp-engine'],
+        },
+        plugin: new WhatsAppWebJsPlugin(),
+      },
+      {
+        manifest: {
+          id: 'baileys',
+          name: 'Baileys Engine',
+          version: '1.0.0',
+          type: PluginType.ENGINE,
+          description: 'Built-in Baileys engine adapter',
+          main: 'index.ts',
+          provides: ['whatsapp-engine'],
+        },
+        plugin: new BaileysPlugin(),
+      },
+    ];
 
-    const wwjsPlugin = new WhatsAppWebJsPlugin();
-    this.pluginLoader.registerBuiltInPlugin(wwjsManifest, wwjsPlugin);
+    for (const engine of builtInEngines) {
+      this.pluginLoader.registerBuiltInPlugin(engine.manifest, engine.plugin);
+    }
 
     // Auto-enable the configured engine
     try {
@@ -92,21 +111,33 @@ export class EngineFactory implements OnModuleInit {
   }
 
   private createFallbackEngine(options: EngineCreateOptions): IWhatsAppEngine {
-    // Legacy direct creation (fallback)
-    return new WhatsAppWebJsAdapter({
-      sessionId: options.sessionId,
-      sessionDataPath: this.configService.get<string>('engine.sessionDataPath') ?? './data/sessions',
-      puppeteer: {
-        headless: this.configService.get<boolean>('engine.puppeteer.headless') ?? true,
-        args: this.configService.get<string[]>('engine.puppeteer.args') ?? ['--no-sandbox', '--disable-setuid-sandbox'],
-      },
-      proxy: options.proxyUrl
-        ? {
-            url: options.proxyUrl,
-            type: options.proxyType ?? 'http',
-          }
-        : undefined,
-    });
+    const sessionDataPath = this.configService.get<string>('engine.sessionDataPath') ?? './data/sessions';
+
+    switch (this.engineType) {
+      case 'baileys':
+        return new BaileysAdapter({
+          sessionId: options.sessionId,
+          sessionDataPath,
+        });
+
+      case 'whatsapp-web.js':
+      default:
+        return new WhatsAppWebJsAdapter({
+          sessionId: options.sessionId,
+          sessionDataPath,
+          puppeteer: {
+            headless: this.configService.get<boolean>('engine.puppeteer.headless') ?? true,
+            args:
+              this.configService.get<string[]>('engine.puppeteer.args') ?? ['--no-sandbox', '--disable-setuid-sandbox'],
+          },
+          proxy: options.proxyUrl
+            ? {
+                url: options.proxyUrl,
+                type: options.proxyType ?? 'http',
+              }
+            : undefined,
+        });
+    }
   }
 
   // ============================================================================

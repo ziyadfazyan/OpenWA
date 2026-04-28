@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PluginLoaderService, PluginStatus } from '../../core/plugins';
 import { PluginDto } from './dto/plugin.dto';
 
+const BUILT_IN_ENGINE_IDS = new Set(['whatsapp-web.js', 'baileys']);
+
 @Injectable()
 export class PluginsService {
   constructor(private readonly pluginLoader: PluginLoaderService) {}
@@ -18,7 +20,7 @@ export class PluginsService {
       author: plugin.manifest.author,
       status: plugin.status,
       config: plugin.config,
-      builtIn: plugin.manifest.id === 'whatsapp-web.js', // Built-in engines
+      builtIn: BUILT_IN_ENGINE_IDS.has(plugin.manifest.id),
       provides: plugin.manifest.provides ?? [],
       configSchema: plugin.manifest.configSchema,
       loadedAt: plugin.loadedAt?.toISOString(),
@@ -43,7 +45,7 @@ export class PluginsService {
       author: plugin.manifest.author,
       status: plugin.status,
       config: plugin.config,
-      builtIn: plugin.manifest.id === 'whatsapp-web.js',
+      builtIn: BUILT_IN_ENGINE_IDS.has(plugin.manifest.id),
       provides: plugin.manifest.provides ?? [],
       configSchema: plugin.manifest.configSchema,
       loadedAt: plugin.loadedAt?.toISOString(),

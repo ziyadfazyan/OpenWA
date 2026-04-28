@@ -47,6 +47,11 @@ interface EngineConfig {
   browserArgs: string;
 }
 
+const ENGINE_OPTIONS = [
+  { value: 'whatsapp-web.js', label: 'WhatsApp Web.js' },
+  { value: 'baileys', label: 'Baileys' },
+];
+
 export default function Plugins() {
   useDocumentTitle('Plugins');
   const toast = useToast();
@@ -370,7 +375,11 @@ export default function Plugins() {
                         value={engineConfig.type}
                         onChange={e => setEngineConfig({ ...engineConfig, type: e.target.value })}
                       >
-                        <option value="whatsapp-web.js">WhatsApp Web.js</option>
+                        {ENGINE_OPTIONS.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
