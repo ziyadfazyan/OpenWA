@@ -43,7 +43,7 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
     private readonly eventsGateway: EventsGateway,
     private readonly webhookService: WebhookService,
     private readonly hookManager: HookManager,
-  ) {}
+  ) { }
 
   /**
    * On backend startup, reset all active session statuses to disconnected
@@ -67,6 +67,30 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
         action: 'startup_reset',
         affected: result.affected,
       });
+    }
+
+    // Automatically reconnect disconnected sessions
+    const disconnectedSessions = await this.sessionRepository.find({
+      where: { status: SessionStatus.DISCONNECTED },
+    });
+
+    for (const session of disconnectedSessions) {
+      await new Promise(res => setTimeout(res, 1000)); // delay 1 detik antar session
+
+      this.logger.log(`Auto-reconnect: ${session.name}`, {
+        sessionId: session.id,
+      });
+
+      if (!this.reconnectStates.has(session.id)) {
+        this.reconnectStates.set(session.id, {
+          attempts: 0,
+          timer: null,
+          maxAttempts: 5,
+          baseDelay: 5000,
+        });
+      }
+
+      this.scheduleReconnect(session.id, session);
     }
   }
 

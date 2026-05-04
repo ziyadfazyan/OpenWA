@@ -590,24 +590,43 @@ export class BaileysAdapter extends EventEmitter implements IWhatsAppEngine {
   }
 
   private async sendMediaMessage(chatId: string, media: MediaInput, field: 'image' | 'video' | 'audio' | 'document' | 'sticker'): Promise<MessageResult> {
-    const content = {
-      [field]: await this.resolveMediaPayload(media.data),
-    } as unknown as AnyMessageContent;
+    try {
+      const content = {
+        [field]: await this.resolveMediaPayload(media.data),
+      } as unknown as AnyMessageContent;
 
-    if (media.caption) {
-      (content as Record<string, unknown>).caption = media.caption;
+      if (media.caption) {
+        (content as Record<string, unknown>).caption = media.caption;
+      }
+
+      if (media.filename) {
+        (content as Record<string, unknown>).fileName = media.filename;
+      }
+
+      if (media.mimetype) {
+        (content as Record<string, unknown>).mimetype = media.mimetype;
+      }
+
+      // Validate image format for thumbnails
+      if (field === 'image' && media.mimetype && !media.mimetype.startsWith('image/')) {
+        throw new Error(`Unsupported image format: ${media.mimetype}`);
+      }
+
+      this.logger.debug(`Sending media message to ${chatId} with field ${field}`);
+
+      const message = await this.sendMessage(chatId, content);
+      return this.extractMessageResult(message);
+    } catch (error) {
+      const err = error as Error;
+      this.logger.error(`Failed to send media message to ${chatId} with field ${field}: ${err.message}`);
+
+      // Handle unsupported image format gracefully
+      if (err.message.includes('unsupported image format')) {
+        throw new Error('The provided image format is not supported. Please use a standard format like JPEG or PNG.');
+      }
+
+      throw new Error(`Failed to send ${field} message: ${err.message}`);
     }
-
-    if (media.filename) {
-      (content as Record<string, unknown>).fileName = media.filename;
-    }
-
-    if (media.mimetype) {
-      (content as Record<string, unknown>).mimetype = media.mimetype;
-    }
-
-    const message = await this.sendMessage(chatId, content);
-    return this.extractMessageResult(message);
   }
 
   private async sendMessage(chatId: string, content: AnyMessageContent): Promise<WAMessage | undefined> {
