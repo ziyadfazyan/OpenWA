@@ -177,11 +177,20 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
     // Cancel any reconnection attempts
     this.cancelReconnect(id);
 
-    // Stop engine if running
+    // Stop engine if running, then delete session data from disk
     const engine = this.engines.get(id);
     if (engine) {
       await engine.destroy();
+      await engine.deleteSessionData();
       this.engines.delete(id);
+    } else {
+      // Engine not running — create a temporary instance just to delete session data
+      const tempEngine = this.engineFactory.create({
+        sessionId: session.name,
+        proxyUrl: session.proxyUrl || undefined,
+        proxyType: session.proxyType || undefined,
+      });
+      await tempEngine.deleteSessionData();
     }
 
     // Execute hook BEFORE delete so plugins can access session data

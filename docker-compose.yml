@@ -26,9 +26,7 @@ services:
     container_name: openwa-api
     restart: unless-stopped
     ports:
-      - '127.0.0.1:${API_PORT:-2785}:2785'
-    expose:
-      - '2785'
+      - "2785:2785"
     environment:
       # Core
       - NODE_ENV=${NODE_ENV:-production}
@@ -43,7 +41,7 @@ services:
       - DATABASE_PASSWORD=${DATABASE_PASSWORD:-openwa}
       - DATABASE_SYNCHRONIZE=${DATABASE_SYNCHRONIZE:-false}
       # Engine
-      - ENGINE_TYPE=${ENGINE_TYPE:-whatsapp-web.js}
+      - ENGINE_TYPE=${ENGINE_TYPE:-baileys}
       - SESSION_DATA_PATH=/app/data/sessions
       - PUPPETEER_HEADLESS=${PUPPETEER_HEADLESS:-true}
       - PUPPETEER_ARGS=${PUPPETEER_ARGS:---no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu}
@@ -103,10 +101,11 @@ services:
       context: ./dashboard
       dockerfile: Dockerfile.traefik
     container_name: openwa-dashboard
-    profiles: ['with-dashboard', 'full']
     restart: unless-stopped
-    expose:
-      - '80'
+
+    ports:
+      - "2886:80"
+
     depends_on:
       - openwa-api
     labels:

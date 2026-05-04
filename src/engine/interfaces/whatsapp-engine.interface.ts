@@ -209,6 +209,7 @@ export interface IWhatsAppEngine {
   disconnect(): Promise<void>; // Closes browser but keeps session (can reconnect without QR)
   logout(): Promise<void>; // Logs out and clears session data (requires QR scan again)
   destroy(): Promise<void>;
+  deleteSessionData(): Promise<void>; // Deletes session folder from disk (called on session delete)
 
   // Status
   getStatus(): EngineStatus;

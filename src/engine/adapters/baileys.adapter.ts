@@ -198,6 +198,11 @@ export class BaileysAdapter extends EventEmitter implements IWhatsAppEngine {
     this.setStatus(EngineStatus.DISCONNECTED);
   }
 
+  async deleteSessionData(): Promise<void> {
+    fs.rmSync(this.authPath, { recursive: true, force: true });
+    this.logger.log(`Session data deleted: ${this.authPath}`);
+  }
+
   getStatus(): EngineStatus {
     return this.status;
   }

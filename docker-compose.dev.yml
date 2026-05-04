@@ -16,7 +16,7 @@ services:
       - DATABASE_TYPE=sqlite
       - DATABASE_NAME=/app/data/openwa.sqlite
       - DATABASE_SYNCHRONIZE=true
-      - ENGINE_TYPE=whatsapp-web.js
+      - ENGINE_TYPE=baileys
       - SESSION_DATA_PATH=/app/data/sessions
       - PUPPETEER_HEADLESS=true
       - PUPPETEER_ARGS=--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu

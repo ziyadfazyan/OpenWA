@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js';
 import * as qrcode from 'qrcode';
 import * as path from 'path';
+import * as fs from 'fs';
 import {
   IWhatsAppEngine,
   EngineStatus,
@@ -251,6 +252,13 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
       this.client = null;
       this.setStatus(EngineStatus.DISCONNECTED);
     }
+  }
+
+  async deleteSessionData(): Promise<void> {
+    // LocalAuth stores session at: {dataPath}/wwebjs_auth/session-{clientId}
+    const sessionPath = path.resolve(this.config.sessionDataPath, 'wwebjs_auth', `session-${this.config.sessionId}`);
+    fs.rmSync(sessionPath, { recursive: true, force: true });
+    this.logger.log(`Session data deleted: ${sessionPath}`);
   }
 
   getStatus(): EngineStatus {
