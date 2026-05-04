@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff, Github } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import './Login.css';
 
 interface LoginProps {
@@ -80,7 +80,7 @@ export function Login({ onLogin }: LoginProps) {
         <p className="login-help">
           Need help?{' '}
           <a
-            href="https://github.com/rmyndharis/OpenWA/blob/main/docs/01-project-overview.md"
+            href="https://github.com/ziyadfazyan/OpenWA/blob/main/docs/01-project-overview.md"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -88,18 +88,6 @@ export function Login({ onLogin }: LoginProps) {
           </a>
         </p>
       </div>
-
-      <footer className="login-footer">
-        <span>Made with ❤️ by Yudhi Armyndharis and the OpenWA Community</span>
-        <a
-          href="https://github.com/rmyndharis/OpenWA"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="github-link"
-        >
-          <Github size={18} />
-        </a>
-      </footer>
     </div>
   );
 }
