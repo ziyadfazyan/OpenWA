@@ -101,7 +101,7 @@ export class BaileysAdapter extends EventEmitter implements IWhatsAppEngine {
     this.socket = makeWASocket({
       auth: state,
       version,
-      browser: Browsers.ubuntu('OpenWA'),
+      browser: ['Penailmu', 'Windows', 'Chrome']
     });
 
     this.socket.ev.on('creds.update', () => {
