@@ -82,11 +82,15 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
       });
 
       if (!this.reconnectStates.has(session.id)) {
+        const config = session.config as {
+          maxReconnectAttempts?: number;
+          reconnectBaseDelay?: number;
+        } | null;
         this.reconnectStates.set(session.id, {
           attempts: 0,
           timer: null,
-          maxAttempts: 5,
-          baseDelay: 5000,
+          maxAttempts: config?.maxReconnectAttempts ?? Infinity,
+          baseDelay: config?.reconnectBaseDelay ?? 5000,
         });
       }
 
@@ -242,7 +246,7 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
     this.reconnectStates.set(id, {
       attempts: 0,
       timer: null,
-      maxAttempts: config?.maxReconnectAttempts ?? 5,
+      maxAttempts: config?.maxReconnectAttempts ?? Infinity,
       baseDelay: config?.reconnectBaseDelay ?? 5000,
     });
 
@@ -400,11 +404,24 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
     }
 
     // Exponential backoff: baseDelay * 2^attempts (with jitter)
-    const delay = state.baseDelay * Math.pow(2, state.attempts) + Math.random() * 1000;
+    // Cap exponential backoff attempt count at 10 to avoid large numbers and overflow
+    const exponent = Math.min(state.attempts, 10);
+    let delay = state.baseDelay * Math.pow(2, exponent) + Math.random() * 1000;
+
+    // Cap maximum delay at 60 seconds (or from config) to prevent waiting too long
+    const config = session.config as {
+      maxReconnectDelay?: number;
+    } | null;
+    const maxDelay = config?.maxReconnectDelay ?? 60000;
+    if (delay > maxDelay) {
+      delay = maxDelay;
+    }
+
     state.attempts++;
 
+    const maxAttemptsStr = state.maxAttempts === Infinity ? 'Infinity' : String(state.maxAttempts);
     this.logger.log(
-      `Scheduling reconnect attempt ${state.attempts}/${state.maxAttempts} in ${Math.round(delay / 1000)}s`,
+      `Scheduling reconnect attempt ${state.attempts}/${maxAttemptsStr} in ${Math.round(delay / 1000)}s`,
       {
         sessionId: id,
         attempt: state.attempts,
