@@ -87,7 +87,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.3",
-    "sqlite3": "^5.1.7",
+    "sqlite3": "^6.0.1",
     "tar-stream": "^3.2.0",
     "typeorm": "^0.3.29",
     "undici": "^8.7.0",
@@ -211,5 +211,8 @@
       }
     },
     "testEnvironment": "node"
+  },
+  "allowScripts": {
+    "sqlite3@6.0.1": true
   }
 }
