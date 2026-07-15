@@ -5,15 +5,15 @@ import { resolveReconnectConfig, clampReconnectDelay } from './session.service';
 // storm); config:{maxReconnectAttempts:'x'} makes the terminal guard `n >= NaN` always false, so the
 // loop never caps. These helpers coerce + clamp the config so the math is always finite and bounded.
 describe('resolveReconnectConfig', () => {
-  it('uses the 5000ms / 5-attempt defaults for absent or empty config', () => {
-    expect(resolveReconnectConfig(null)).toEqual({ baseDelay: 5000, maxAttempts: 5 });
-    expect(resolveReconnectConfig({})).toEqual({ baseDelay: 5000, maxAttempts: 5 });
+  it('uses the 5000ms / 100000-attempt defaults for absent or empty config', () => {
+    expect(resolveReconnectConfig(null)).toEqual({ baseDelay: 5000, maxAttempts: 100000 });
+    expect(resolveReconnectConfig({})).toEqual({ baseDelay: 5000, maxAttempts: 100000 });
   });
 
   it('falls back to defaults for non-numeric (NaN) values', () => {
     expect(resolveReconnectConfig({ reconnectBaseDelay: 'x', maxReconnectAttempts: 'y' })).toEqual({
       baseDelay: 5000,
-      maxAttempts: 5,
+      maxAttempts: 100000,
     });
   });
 
@@ -26,8 +26,9 @@ describe('resolveReconnectConfig', () => {
     expect(resolveReconnectConfig({ reconnectBaseDelay: 0 }).baseDelay).toBe(1000);
   });
 
-  it('clamps maxAttempts to the 0..20 range and floors fractions', () => {
-    expect(resolveReconnectConfig({ maxReconnectAttempts: 999 }).maxAttempts).toBe(20);
+  it('clamps maxAttempts to the 0..100000 range and floors fractions', () => {
+    expect(resolveReconnectConfig({ maxReconnectAttempts: 999 }).maxAttempts).toBe(999);
+    expect(resolveReconnectConfig({ maxReconnectAttempts: 999999 }).maxAttempts).toBe(100000);
     expect(resolveReconnectConfig({ maxReconnectAttempts: -3 }).maxAttempts).toBe(0);
     expect(resolveReconnectConfig({ maxReconnectAttempts: 3.9 }).maxAttempts).toBe(3);
   });

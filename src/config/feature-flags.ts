@@ -30,7 +30,7 @@ export interface FeatureFlags {
  */
 export function computeFeatureFlags(env: NodeJS.ProcessEnv = process.env): FeatureFlags {
   return {
-    autoStartSessions: env.AUTO_START_SESSIONS === 'true',
+    autoStartSessions: env.AUTO_START_SESSIONS !== 'false',
     storeEphemeralMessages: env.STORE_EPHEMERAL_MESSAGES !== 'false',
     resolveLidToPhone: env.RESOLVE_LID_TO_PHONE === 'true',
     simulateTyping: env.SIMULATE_TYPING !== 'false',

@@ -114,12 +114,13 @@ function streamOf(...chunks: Buffer[]): AsyncIterable<Buffer> & { destroy: () =>
 }
 // sessionId (name) and dbSessionId (Session.id UUID) are deliberately distinct here so assertions
 // below prove auth-dir/logging use the name while messageStore (FK-bound) uses the UUID.
-const newAdapter = (): BaileysAdapter =>
+const newAdapter = (maxReconnectAttempts = 5): BaileysAdapter =>
   new BaileysAdapter({
     sessionId: 'sess-1',
     dbSessionId: 'db-uuid-1',
     authDir: './data/baileys',
     messageStore: fakeStore,
+    maxReconnectAttempts,
   });
 
 const noopCallbacks = (over: Partial<EngineEventCallbacks> = {}): EngineEventCallbacks => over;

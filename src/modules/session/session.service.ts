@@ -58,7 +58,7 @@ interface ReconnectState {
 // at 0 — relaunch storm) and the terminal guard `attempts >= NaN` always false (unbounded loop).
 const RECONNECT_BASE_DELAY_MIN_MS = 1000;
 const RECONNECT_BASE_DELAY_MAX_MS = 300_000;
-const RECONNECT_MAX_ATTEMPTS_CAP = 20;
+const RECONNECT_MAX_ATTEMPTS_CAP = 100000;
 const RECONNECT_DELAY_CAP_MS = 3_600_000;
 /**
  * Delay before retrying an ack UPDATE that matched 0 rows. A fast delivered/read ack can arrive before
@@ -70,7 +70,7 @@ export const ACK_RECONCILE_DELAY_MS = 750;
 const clampNumber = (n: number, min: number, max: number): number => Math.min(Math.max(n, min), max);
 
 /** Coerce + clamp the untyped session.config reconnect knobs to finite, bounded values. Defaults
- *  (5000ms / 5 attempts) are preserved; a legitimate `maxReconnectAttempts: 0` (disable) is kept. */
+ *  (5000ms / 100000 attempts) are preserved; a legitimate `maxReconnectAttempts: 0` (disable) is kept. */
 export function resolveReconnectConfig(
   config: { maxReconnectAttempts?: unknown; reconnectBaseDelay?: unknown } | null,
 ): { maxAttempts: number; baseDelay: number } {
@@ -82,7 +82,7 @@ export function resolveReconnectConfig(
   );
   const attemptsRaw = Number(config?.maxReconnectAttempts);
   const maxAttempts = Math.floor(
-    clampNumber(Number.isFinite(attemptsRaw) ? attemptsRaw : 5, 0, RECONNECT_MAX_ATTEMPTS_CAP),
+    clampNumber(Number.isFinite(attemptsRaw) ? attemptsRaw : 100000, 0, RECONNECT_MAX_ATTEMPTS_CAP),
   );
   return { maxAttempts, baseDelay };
 }

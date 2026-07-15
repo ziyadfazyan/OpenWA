@@ -118,7 +118,7 @@ export function Login({ onLogin }: LoginProps) {
         </p>
       </div>
 
-      <footer className="login-footer">
+      {/* <footer className="login-footer">
         <span>{t('login.footer')}</span>
         <a
           href="https://github.com/rmyndharis/OpenWA"
@@ -129,7 +129,7 @@ export function Login({ onLogin }: LoginProps) {
         >
           <GithubIcon size={18} />
         </a>
-      </footer>
+      </footer> */}
     </div>
   );
 }

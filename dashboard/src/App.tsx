@@ -105,7 +105,7 @@ function AppContent() {
           <Route path="/" element={<Layout onLogout={handleLogout} userRole={role} />}>
             <Route index element={<Dashboard />} />
             <Route path="sessions" element={<Sessions />} />
-            <Route path="chats" element={<Chats />} />
+            {role === 'admin' && <Route path="chats" element={<Chats />} />}
             <Route path="webhooks" element={<Webhooks />} />
             <Route path="templates" element={<Templates />} />
             {role === 'admin' && <Route path="api-keys" element={<ApiKeys />} />}

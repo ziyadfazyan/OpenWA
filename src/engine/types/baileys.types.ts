@@ -31,6 +31,7 @@ export interface BaileysAdapterConfig {
   messageStore?: BaileysMessageStore;
   /** Persisted, cross-session lid->phone resolution table. Backs lid resolution beyond the in-memory map. */
   lidMappingStore?: LidMappingStore;
+  maxReconnectAttempts?: number;
 }
 
 /**

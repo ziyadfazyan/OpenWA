@@ -2627,7 +2627,7 @@ describe('SessionService', () => {
     });
 
     it('does nothing when AUTO_START_SESSIONS is not enabled', async () => {
-      delete process.env.AUTO_START_SESSIONS;
+      process.env.AUTO_START_SESSIONS = 'false';
       const startSpy = jest.spyOn(service, 'start').mockResolvedValue(undefined as never);
 
       await service.onApplicationBootstrap();

@@ -22,6 +22,7 @@ import { ListOptions, resolveListWindow } from '../../common/utils/paginate';
 import { QUEUE_NAMES } from '../queue/queue-names';
 import { generateIdempotencyKey, generateDeliveryId } from './utils/idempotency.util';
 import { evaluateFilters } from './filters/filter-evaluator';
+import { enrichWebhookPayload } from './utils/webhook-formatter.util';
 import { LidMappingStoreService } from '../../engine/identity/lid-mapping-store.service';
 import { userPart } from '../../engine/identity/wa-id';
 import {
@@ -42,6 +43,8 @@ export interface WebhookPayload {
   idempotencyKey: string;
   deliveryId: string;
   data: Record<string, unknown>;
+  content?: string;
+  text?: string;
 }
 
 export interface WebhookJobData {
@@ -228,7 +231,7 @@ export class WebhookService implements OnModuleInit, OnModuleDestroy {
   async test(sessionId: string, webhookId: string): Promise<{ success: boolean; statusCode?: number; error?: string }> {
     const webhook = await this.findOne(sessionId, webhookId);
 
-    const testPayload: WebhookPayload = {
+    const testPayload: WebhookPayload = enrichWebhookPayload({
       event: 'test',
       timestamp: new Date().toISOString(),
       sessionId,
@@ -239,7 +242,7 @@ export class WebhookService implements OnModuleInit, OnModuleDestroy {
         webhookId: webhook.id,
         url: webhook.url,
       },
-    };
+    });
 
     const body = JSON.stringify(testPayload);
     const headers: Record<string, string> = {
@@ -349,7 +352,7 @@ export class WebhookService implements OnModuleInit, OnModuleDestroy {
 
       // Use the plugin-modified payload, falling back to the original if a before-hook returned a
       // result without a `payload` key — otherwise we'd POST an `undefined` body.
-      const finalPayload = (hookResult as { payload?: WebhookPayload }).payload ?? payload;
+      const finalPayload = enrichWebhookPayload((hookResult as { payload?: WebhookPayload }).payload ?? payload);
 
       // The idempotency + delivery ids are server-generated and are the documented dedup key
       // (receivers dedupe on the X-OpenWA-Idempotency-Key header). Re-assert them onto the post-hook

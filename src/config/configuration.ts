@@ -118,7 +118,7 @@ export default () => ({
     // Baileys engine (used when ENGINE_TYPE=baileys). Multi-file auth state base dir; each session
     // gets its own subdirectory. Read by the Baileys plugin from the opaque engine config blob.
     baileys: {
-      authDir: process.env.BAILEYS_AUTH_DIR || './data/baileys',
+      authDir: process.env.BAILEYS_AUTH_DIR || './data/sessions/baileys',
     },
   },
 

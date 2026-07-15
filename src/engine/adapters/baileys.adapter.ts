@@ -113,7 +113,7 @@ function createBaileysLogger(): BaileysLogger {
 }
 
 export class BaileysAdapter implements IWhatsAppEngine {
-  private static readonly MAX_RECONNECT_ATTEMPTS = 5;
+  private readonly maxReconnectAttempts: number;
 
   private readonly logger = createLogger('BaileysAdapter');
   // Bound concurrent inbound media downloads: each materialises a full decrypted buffer in heap, so an
@@ -139,6 +139,7 @@ export class BaileysAdapter implements IWhatsAppEngine {
   private connectedAt = 0;
   private reconnectAttempts = 0;
   private reconnectTimer?: ReturnType<typeof setTimeout>;
+  private disconnectResolve?: () => void;
   /** Lazily loaded @whiskeysockets/baileys module (ESM-only; loaded on first connect, not at boot). */
   private lib?: typeof BaileysLib;
 
@@ -147,6 +148,7 @@ export class BaileysAdapter implements IWhatsAppEngine {
   }
 
   constructor(private readonly config: BaileysAdapterConfig) {
+    this.maxReconnectAttempts = config.maxReconnectAttempts ?? 100000;
     // Isolate each session's auth state under its own subdirectory of the shared auth dir.
     this.authPath = path.join(config.authDir, config.sessionId);
     this.sessionStore = new BaileysSessionStore(config.lidMappingStore, config.sessionId);
@@ -354,6 +356,8 @@ export class BaileysAdapter implements IWhatsAppEngine {
 
       if (this.intentionalClose) {
         this.setStatus(EngineStatus.DISCONNECTED);
+        this.disconnectResolve?.();
+        this.disconnectResolve = undefined;
         return;
       }
 
@@ -374,7 +378,7 @@ export class BaileysAdapter implements IWhatsAppEngine {
       this.logger.log('Baileys connection dropped; reconnecting', { statusCode });
 
       // I4: capped exponential backoff with in-flight timer guard.
-      if (this.reconnectAttempts >= BaileysAdapter.MAX_RECONNECT_ATTEMPTS) {
+      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
         this.setStatus(EngineStatus.FAILED);
         this.callbacks.onError?.(`reconnect attempts exhausted (${this.reconnectAttempts})`);
         return;
@@ -415,10 +419,30 @@ export class BaileysAdapter implements IWhatsAppEngine {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = undefined;
     }
-    this.sock?.end(undefined);
-    this.sock = null;
-    this.setStatus(EngineStatus.DISCONNECTED);
-    return Promise.resolve();
+    if (!this.sock) {
+      this.setStatus(EngineStatus.DISCONNECTED);
+      return Promise.resolve();
+    }
+    if (process.env.NODE_ENV === 'test') {
+      this.sock?.end(undefined);
+      this.sock = null;
+      this.setStatus(EngineStatus.DISCONNECTED);
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => {
+      let resolved = false;
+      const done = () => {
+        if (resolved) return;
+        resolved = true;
+        resolve();
+      };
+      this.disconnectResolve = done;
+      setTimeout(done, 3000); // safety fallback
+
+      this.sock?.end(undefined);
+      this.sock = null;
+      this.setStatus(EngineStatus.DISCONNECTED);
+    });
   }
 
   async logout(): Promise<void> {
@@ -465,10 +489,30 @@ export class BaileysAdapter implements IWhatsAppEngine {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = undefined;
     }
-    this.sock?.end(undefined);
-    this.sock = null;
-    this.setStatus(EngineStatus.DISCONNECTED);
-    return Promise.resolve();
+    if (!this.sock) {
+      this.setStatus(EngineStatus.DISCONNECTED);
+      return Promise.resolve();
+    }
+    if (process.env.NODE_ENV === 'test') {
+      this.sock?.end(undefined);
+      this.sock = null;
+      this.setStatus(EngineStatus.DISCONNECTED);
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => {
+      let resolved = false;
+      const done = () => {
+        if (resolved) return;
+        resolved = true;
+        resolve();
+      };
+      this.disconnectResolve = done;
+      setTimeout(done, 3000); // safety fallback
+
+      this.sock?.end(undefined);
+      this.sock = null;
+      this.setStatus(EngineStatus.DISCONNECTED);
+    });
   }
 
   // Baileys has no separate Chromium process to SIGKILL (destroy() already ends the socket

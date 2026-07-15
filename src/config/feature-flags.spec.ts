@@ -5,7 +5,7 @@ describe('feature-flags', () => {
     it('applies the documented defaults for an empty environment', () => {
       const flags = computeFeatureFlags({});
       expect(flags).toEqual<FeatureFlags>({
-        autoStartSessions: false, // opt-in
+        autoStartSessions: true, // opt-out
         storeEphemeralMessages: true, // opt-out
         resolveLidToPhone: false, // opt-in
         simulateTyping: true, // opt-out
@@ -13,21 +13,21 @@ describe('feature-flags', () => {
       });
     });
 
-    it('treats opt-in flags (autoStart, resolveLid) as ON only for the exact string "true"', () => {
-      expect(computeFeatureFlags({ AUTO_START_SESSIONS: 'true' }).autoStartSessions).toBe(true);
+    it('treats opt-in flags (resolveLid) as ON only for the exact string "true"', () => {
       expect(computeFeatureFlags({ RESOLVE_LID_TO_PHONE: 'true' }).resolveLidToPhone).toBe(true);
       // Anything else stays OFF.
       for (const v of ['false', 'TRUE', '1', 'yes', '']) {
-        expect(computeFeatureFlags({ AUTO_START_SESSIONS: v }).autoStartSessions).toBe(false);
         expect(computeFeatureFlags({ RESOLVE_LID_TO_PHONE: v }).resolveLidToPhone).toBe(false);
       }
     });
 
-    it('treats opt-out flags (storeEphemeral, simulateTyping) as OFF only for the exact string "false"', () => {
+    it('treats opt-out flags (autoStart, storeEphemeral, simulateTyping) as OFF only for the exact string "false"', () => {
+      expect(computeFeatureFlags({ AUTO_START_SESSIONS: 'false' }).autoStartSessions).toBe(false);
       expect(computeFeatureFlags({ STORE_EPHEMERAL_MESSAGES: 'false' }).storeEphemeralMessages).toBe(false);
       expect(computeFeatureFlags({ SIMULATE_TYPING: 'false' }).simulateTyping).toBe(false);
       // Anything else stays ON.
       for (const v of ['true', 'FALSE', '0', 'no', '']) {
+        expect(computeFeatureFlags({ AUTO_START_SESSIONS: v }).autoStartSessions).toBe(true);
         expect(computeFeatureFlags({ STORE_EPHEMERAL_MESSAGES: v }).storeEphemeralMessages).toBe(true);
         expect(computeFeatureFlags({ SIMULATE_TYPING: v }).simulateTyping).toBe(true);
       }

@@ -30,10 +30,12 @@ function createMockContext(
   headers: Record<string, string> = {},
   params: Record<string, string> = {},
   socketIp = '127.0.0.1',
+  path = '/test',
 ): ExecutionContext {
   const request = {
     headers,
     params,
+    path,
     ip: socketIp,
     socket: { remoteAddress: socketIp },
   };
@@ -292,5 +294,65 @@ describe('ApiKeyGuard', () => {
     await guard.canActivate(context);
 
     expect(authService.validateApiKey).toHaveBeenCalledWith('key', '203.0.113.50', undefined);
+  });
+
+  describe('chats path filtering for operator and viewer', () => {
+    beforeEach(() => {
+      guard = buildGuard();
+    });
+
+    it('should reject OPERATOR access to chats path', async () => {
+      reflector.getAllAndOverride.mockReturnValueOnce(false).mockReturnValueOnce(undefined);
+      const apiKey = createMockApiKey({ role: ApiKeyRole.OPERATOR });
+      (authService.validateApiKey as jest.Mock).mockResolvedValue(apiKey);
+
+      const context = createMockContext({ 'x-api-key': 'key' }, {}, '127.0.0.1', '/api/sessions/sess-123/chats');
+
+      await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should reject VIEWER access to chats path', async () => {
+      reflector.getAllAndOverride.mockReturnValueOnce(false).mockReturnValueOnce(undefined);
+      const apiKey = createMockApiKey({ role: ApiKeyRole.VIEWER });
+      (authService.validateApiKey as jest.Mock).mockResolvedValue(apiKey);
+
+      const context = createMockContext({ 'x-api-key': 'key' }, {}, '127.0.0.1', '/api/sessions/sess-123/chats');
+
+      await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should reject OPERATOR access to chats sub-paths', async () => {
+      reflector.getAllAndOverride.mockReturnValueOnce(false).mockReturnValueOnce(undefined);
+      const apiKey = createMockApiKey({ role: ApiKeyRole.OPERATOR });
+      (authService.validateApiKey as jest.Mock).mockResolvedValue(apiKey);
+
+      const context = createMockContext({ 'x-api-key': 'key' }, {}, '127.0.0.1', '/api/sessions/sess-123/chats/read');
+
+      await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should allow ADMIN access to chats path', async () => {
+      reflector.getAllAndOverride.mockReturnValueOnce(false).mockReturnValueOnce(undefined);
+      const apiKey = createMockApiKey({ role: ApiKeyRole.ADMIN });
+      (authService.validateApiKey as jest.Mock).mockResolvedValue(apiKey);
+      (authService.hasPermission as jest.Mock).mockReturnValue(true);
+
+      const context = createMockContext({ 'x-api-key': 'key' }, {}, '127.0.0.1', '/api/sessions/sess-123/chats');
+      const result = await guard.canActivate(context);
+
+      expect(result).toBe(true);
+    });
+
+    it('should allow OPERATOR access to non-chats path', async () => {
+      reflector.getAllAndOverride.mockReturnValueOnce(false).mockReturnValueOnce(undefined);
+      const apiKey = createMockApiKey({ role: ApiKeyRole.OPERATOR });
+      (authService.validateApiKey as jest.Mock).mockResolvedValue(apiKey);
+      (authService.hasPermission as jest.Mock).mockReturnValue(true);
+
+      const context = createMockContext({ 'x-api-key': 'key' }, {}, '127.0.0.1', '/api/sessions/sess-123/status');
+      const result = await guard.canActivate(context);
+
+      expect(result).toBe(true);
+    });
   });
 });

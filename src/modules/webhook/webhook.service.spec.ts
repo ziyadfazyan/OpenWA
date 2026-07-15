@@ -1061,4 +1061,41 @@ describe('WebhookService', () => {
       );
     });
   });
+
+  // ── test method and formatter integration ───────────────────────
+
+  describe('test', () => {
+    const mockFetch = jest.fn();
+
+    beforeEach(() => {
+      global.fetch = mockFetch as typeof global.fetch;
+      mockFetch.mockResolvedValue({ ok: true, status: 200 });
+    });
+
+    afterEach(() => {
+      mockFetch.mockReset();
+    });
+
+    it('should send standard JSON payload enriched with content and text fields', async () => {
+      const webhook = createMockWebhook({ url: 'https://example.com/webhook' });
+      (repository.findOne as jest.Mock).mockResolvedValue(webhook);
+
+      const result = await service.test('sess-1', webhook.id);
+
+      expect(result).toEqual({ success: true, statusCode: 200 });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://example.com/webhook',
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('"content"'),
+        }),
+      );
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body).toHaveProperty('event', 'test');
+      expect(body).toHaveProperty('content');
+      expect(body).toHaveProperty('text');
+      expect(body.content).toContain('OpenWA Webhook Test');
+    });
+  });
 });

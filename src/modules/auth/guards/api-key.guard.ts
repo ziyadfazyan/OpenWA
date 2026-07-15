@@ -72,6 +72,10 @@ export class ApiKeyGuard implements CanActivate {
     // Validate API key
     const apiKey = await this.authService.validateApiKey(apiKeyHeader, clientIp, sessionId);
 
+    if ((apiKey.role === ApiKeyRole.OPERATOR || apiKey.role === ApiKeyRole.VIEWER) && /\/sessions\/[^/]+\/chats(\/|$)/.test(request.path)) {
+      throw new ForbiddenException('Insufficient permissions. Operators and viewers cannot access chats.');
+    }
+
     if (requiredRole && !this.authService.hasPermission(apiKey, requiredRole)) {
       throw new ForbiddenException(`Insufficient permissions. Required: ${requiredRole}`);
     }
