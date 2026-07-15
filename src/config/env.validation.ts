@@ -40,10 +40,17 @@ export function validateEnv(config: EnvConfig): EnvConfig {
   checkEnum('STORAGE_TYPE', ['local', 's3']);
 
   if (dbType === 'postgres') {
-    for (const key of ['DATABASE_HOST', 'DATABASE_USERNAME', 'DATABASE_PASSWORD']) {
-      if (!str(key)) {
-        errors.push(`${key} is required when DATABASE_TYPE=postgres`);
-      }
+    // Require host and username for Postgres; password optional (useful for local dev without auth)
+    if (!str('DATABASE_HOST')) {
+      errors.push('DATABASE_HOST is required when DATABASE_TYPE=postgres');
+    }
+    if (!str('DATABASE_USERNAME')) {
+      errors.push('DATABASE_USERNAME is required when DATABASE_TYPE=postgres');
+    }
+    // DATABASE_PASSWORD is optional; if provided it must be non‑empty
+    const dbPwd = str('DATABASE_PASSWORD');
+    if (dbPwd !== undefined && dbPwd === '') {
+      errors.push('DATABASE_PASSWORD cannot be empty when set');
     }
     // The Postgres data connection always runs migrations (app.module.ts hardcodes migrationsRun=true).
     // An opted-in DATABASE_SYNCHRONIZE=true makes TypeORM re-sync the schema from entities on every
